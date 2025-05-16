@@ -1,81 +1,166 @@
 #include <iostream>
-#include <windows.h>  // Rang uchun Windows kutubxonasi
+#include <vector>
+#include <map>
+#include <ctime>
+
 using namespace std;
 
-void setColor(int color) {
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+string getCurrentTime() {
+    time_t now = time(0);
+    char* dt = ctime(&now);
+    return string(dt);
 }
 
-void showTitle(const string& title) {
-    setColor(11);  // Ochiq ko‘k rang
-    cout << "\n=== " << title << " ===\n";
-    setColor(7);   // Standart rang
-}
+class Commit {
+public:
+    string message;
+    string timestamp;
 
-void showOverview() {
-    showTitle("Najot Ta'lim Umumiy Ma'lumot");
-    cout << "Najot Ta'lim - O'zbekistondagi yetakchi ta'lim markazi.\n";
-    cout << "2018-yilda tashkil etilgan va zamonaviy kasblar bo'yicha ta'lim beradi.\n";
-    cout << "Bitiruvchilarning 75-85% doimiy ish bilan ta'minlanadi.\n";
-}
+    Commit(string msg) {
+        message = msg;
+        timestamp = getCurrentTime();
+    }
 
-void showCourses() {
-    showTitle("Kurslar");
-    cout << "1. Dasturlash: Python, JavaScript, React, Node.js, QA\n";
-    cout << "2. Dizayn: Grafik dizayn, UX/UI dizayn\n";
-    cout << "3. Marketing: SMM, Digital marketing\n";
-    cout << "Kurslar Bootcamp va Standart shaklda taklif qilinadi.\n";
-}
+    void display() {
+        cout << "Commit: " << message << " at " << timestamp;
+    }
+};
 
-void showBranches() {
-    showTitle("Filiallar");
-    cout << "Toshkent: Xadra, Chilonzor, Chimboy\n";
-    cout << "Viloyatlar: Farg'ona, Samarqand, Xorazm\n";
-}
+class Branch {
+public:
+    string name;
+    vector<Commit> commits;
 
-void showContacts() {
-    showTitle("Aloqa");
-    cout << "Telefon: +998 78 888 98 88\n";
-    cout << "Veb-sayt: https://najottalim.uz\n";
-    cout << "Telegram: @najottalim\n";
-}
+    Branch(string branchName) {
+        name = branchName;
+    }
+
+    void addCommit(string message) {
+        commits.emplace_back(message);
+    }
+
+    void showHistory() {
+        cout << "Branch: " << name << endl;
+        for (auto& c : commits) {
+            c.display();
+        }
+    }
+};
+
+class Repository {
+public:
+    string name;
+    map<string, Branch> branches;
+
+    Repository(string repoName) {
+        name = repoName;
+        branches["main"] = Branch("main");
+    }
+
+    void createBranch(string branchName) {
+        if (branches.find(branchName) == branches.end()) {
+            branches[branchName] = Branch(branchName);
+            cout << "Branch '" << branchName << "' created.\n";
+        } else {
+            cout << "Branch already exists.\n";
+        }
+    }
+
+    void commit(string branchName, string message) {
+        if (branches.find(branchName) != branches.end()) {
+            branches[branchName].addCommit(message);
+            cout << "Commit added to branch '" << branchName << "'.\n";
+        } else {
+            cout << "Branch not found.\n";
+        }
+    }
+
+    void log(string branchName) {
+        if (branches.find(branchName) != branches.end()) {
+            branches[branchName].showHistory();
+        } else {
+            cout << "Branch not found.\n";
+        }
+    }
+};
+
+class User {
+public:
+    string username;
+    vector<Repository> repositories;
+
+    User(string uname) {
+        username = uname;
+    }
+
+    void createRepo(string repoName) {
+        repositories.emplace_back(repoName);
+        cout << "Repository '" << repoName << "' created.\n";
+    }
+
+    Repository* getRepo(string repoName) {
+        for (auto& repo : repositories) {
+            if (repo.name == repoName) {
+                return &repo;
+            }
+        }
+        cout << "Repository not found.\n";
+        return nullptr;
+    }
+};
 
 int main() {
+    vector<User> users;
+    string uname;
+    cout << "Enter your username: ";
+    cin >> uname;
+    User user(uname);
+    users.push_back(user);
+
     int choice;
-
-    setColor(14); // Sariq rang bilan salomlashish
-    cout << "Najot Ta'lim haqida interaktiv dasturga xush kelibsiz!\n";
-    setColor(7);  // Standart rang
-
-    do {
-        setColor(10); // Yashil rang
-        cout << "\n===== Menyu =====\n";
-        setColor(7);
-        cout << "1. Umumiy ma'lumot\n";
-        cout << "2. Kurslar\n";
-        cout << "3. Filiallar\n";
-        cout << "4. Aloqa\n";
-        cout << "0. Chiqish\n";
-        cout << "Tanlovingiz: ";
+    while (true) {
+        cout << "\n1. Create Repository\n2. Create Branch\n3. Commit\n4. Show Log\n5. Exit\nChoice: ";
         cin >> choice;
+        string repoName, branchName, message;
 
         switch (choice) {
-            case 1: showOverview(); break;
-            case 2: showCourses(); break;
-            case 3: showBranches(); break;
-            case 4: showContacts(); break;
-            case 0:
-                setColor(12); // Qizil rang
-                cout << "Dasturdan chiqish...\n";
-                break;
-            default:
-                setColor(12); // Qizil rang
-                cout << "Noto'g'ri tanlov, qaytadan urinib ko'ring.\n";
-                setColor(7);
-                break;
+        case 1:
+            cout << "Enter repository name: ";
+            cin >> repoName;
+            users[0].createRepo(repoName);
+            break;
+        case 2:
+            cout << "Enter repository name: ";
+            cin >> repoName;
+            cout << "Enter branch name: ";
+            cin >> branchName;
+            if (auto repo = users[0].getRepo(repoName))
+                repo->createBranch(branchName);
+            break;
+        case 3:
+            cout << "Enter repository name: ";
+            cin >> repoName;
+            cout << "Enter branch name: ";
+            cin.ignore();
+            getline(cin, branchName);
+            cout << "Enter commit message: ";
+            getline(cin, message);
+            if (auto repo = users[0].getRepo(repoName))
+                repo->commit(branchName, message);
+            break;
+        case 4:
+            cout << "Enter repository name: ";
+            cin >> repoName;
+            cout << "Enter branch name: ";
+            cin >> branchName;
+            if (auto repo = users[0].getRepo(repoName))
+                repo->log(branchName);
+            break;
+        case 5:
+            cout << "Goodbye!\n";
+            return 0;
+        default:
+            cout << "Invalid choice.\n";
         }
-    } while (choice != 0);
-
-    setColor(7); // Rangni tiklash
-    return 0;
+    }
 }
