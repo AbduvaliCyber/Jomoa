@@ -1,223 +1,163 @@
 #include <iostream>
 #include <vector>
-#include <map>
-#include <string>
 #include <iomanip>
+#include <ctime>
+#include <algorithm>
 
 using namespace std;
 
-// Forward declarations
-class Course;
+string currentDate() {
+    time_t t = time(0);
+    char* dt = ctime(&t);
+    return string(dt);
+}
 
-class Person {
+class Tool {
+protected:
+    string title;
+    string author;
+    string subject;
+    string uploadDate;
+    string type; // Book, Video, Test, etc.
+
 public:
-    string name;
-    string email;
-
-    Person(string n, string e) : name(n), email(e) {}
-
-    virtual void showInfo() = 0;
-};
-
-class Student : public Person {
-public:
-    map<string, double> grades;
-
-    Student(string n, string e) : Person(n, e) {}
-
-    void addGrade(string courseName, double grade) {
-        grades[courseName] = grade;
+    Tool(string t, string a, string s, string ty)
+        : title(t), author(a), subject(s), type(ty) {
+        uploadDate = currentDate();
     }
 
-    void showInfo() override {
-        cout << "👩‍🎓 Student: " << name << " | Email: " << email << endl;
-        for (auto& g : grades) {
-            cout << "  📚 " << g.first << ": " << g.second << " ball" << endl;
-        }
-    }
-};
+    string getType() const { return type; }
+    string getTitle() const { return title; }
+    string getAuthor() const { return author; }
 
-class Teacher : public Person {
-public:
-    vector<string> teachingCourses;
-
-    Teacher(string n, string e) : Person(n, e) {}
-
-    void assignCourse(string courseName) {
-        teachingCourses.push_back(courseName);
-    }
-
-    void showInfo() override {
-        cout << "👨‍🏫 Teacher: " << name << " | Email: " << email << endl;
-        for (auto& c : teachingCourses) {
-            cout << "  📘 Teaching: " << c << endl;
-        }
+    virtual void display() const {
+        cout << "📘 Title: " << title << "\n";
+        cout << "✍️  Author: " << author << "\n";
+        cout << "📂 Subject: " << subject << "\n";
+        cout << "🗂 Type: " << type << "\n";
+        cout << "📅 Uploaded: " << uploadDate;
+        cout << "----------------------------------\n";
     }
 };
 
-class Course {
-public:
-    string name;
-    Teacher* instructor;
-    vector<Student*> students;
-
-    Course(string courseName, Teacher* t) : name(courseName), instructor(t) {
-        instructor->assignCourse(name);
-    }
-
-    void enrollStudent(Student* s) {
-        students.push_back(s);
-    }
-
-    void showCourseInfo() {
-        cout << "\n📚 Course: " << name << endl;
-        cout << "  👨‍🏫 Instructor: " << instructor->name << endl;
-        cout << "  👥 Enrolled Students:\n";
-        for (auto* s : students) {
-            cout << "    - " << s->name << endl;
-        }
-    }
-};
-
-class EduCenter {
+class EduToolsManager {
 private:
-    vector<Student> students;
-    vector<Teacher> teachers;
-    vector<Course> courses;
+    vector<Tool> tools;
 
 public:
-    void addStudent(string name, string email) {
-        students.emplace_back(name, email);
-        cout << "✅ Student added: " << name << endl;
+    void addTool() {
+        string t, a, s, ty;
+        cout << "\nEnter title: ";
+        getline(cin, t);
+        cout << "Enter author: ";
+        getline(cin, a);
+        cout << "Enter subject: ";
+        getline(cin, s);
+        cout << "Enter type (Book/Video/Test/PDF/Slides): ";
+        getline(cin, ty);
+        tools.emplace_back(t, a, s, ty);
+        cout << "✅ Tool added successfully!\n";
     }
 
-    void addTeacher(string name, string email) {
-        teachers.emplace_back(name, email);
-        cout << "✅ Teacher added: " << name << endl;
-    }
-
-    Student* findStudent(string name) {
-        for (auto& s : students) {
-            if (s.name == name)
-                return &s;
+    void listByCategory(string category) {
+        cout << "\n📂 Showing all " << category << "s:\n";
+        int count = 0;
+        for (const auto& tool : tools) {
+            if (tool.getType() == category) {
+                tool.display();
+                count++;
+            }
         }
-        return nullptr;
+        if (count == 0)
+            cout << "❌ No tools found in this category.\n";
     }
 
-    Teacher* findTeacher(string name) {
-        for (auto& t : teachers) {
-            if (t.name == name)
-                return &t;
+    void searchByTitle(string keyword) {
+        cout << "\n🔍 Search results for \"" << keyword << "\":\n";
+        int count = 0;
+        for (const auto& tool : tools) {
+            if (tool.getTitle().find(keyword) != string::npos ||
+                tool.getAuthor().find(keyword) != string::npos) {
+                tool.display();
+                count++;
+            }
         }
-        return nullptr;
+        if (count == 0)
+            cout << "❌ No matching tools found.\n";
     }
 
-    Course* findCourse(string name) {
-        for (auto& c : courses) {
-            if (c.name == name)
-                return &c;
+    void showStatistics() {
+        map <string, int> stats;
+        for (const auto& tool : tools) {
+            stats[tool.getType()]++;
         }
-        return nullptr;
-    }
 
-    void createCourse(string courseName, string teacherName) {
-        Teacher* t = findTeacher(teacherName);
-        if (t) {
-            courses.emplace_back(courseName, t);
-            cout << "✅ Course created: " << courseName << endl;
-        } else {
-            cout << "❌ Teacher not found!\n";
+        cout << "\n📊 Tool Statistics:\n";
+        for (const auto& entry : stats) {
+            cout << " - " << entry.first << ": " << entry.second << "\n";
         }
-    }
-
-    void enrollStudentToCourse(string studentName, string courseName) {
-        Student* s = findStudent(studentName);
-        Course* c = findCourse(courseName);
-        if (s && c) {
-            c->enrollStudent(s);
-            cout << "📥 Enrolled " << s->name << " to " << c->name << endl;
-        } else {
-            cout << "❌ Student or Course not found!\n";
-        }
-    }
-
-    void gradeStudent(string studentName, string courseName, double grade) {
-        Student* s = findStudent(studentName);
-        if (s) {
-            s->addGrade(courseName, grade);
-            cout << "✅ Graded " << s->name << ": " << courseName << " = " << grade << endl;
-        } else {
-            cout << "❌ Student not found!\n";
+        if (tools.empty()) {
+            cout << "No tools added yet.\n";
         }
     }
 
-    void showAllCourses() {
-        for (auto& c : courses) {
-            c.showCourseInfo();
+    void showAllTools() {
+        cout << "\n📚 All Uploaded Tools:\n";
+        for (const auto& tool : tools) {
+            tool.display();
         }
-    }
-
-    void showAllPeople() {
-        cout << "\n=== 👩‍🎓 Students ===\n";
-        for (auto& s : students) s.showInfo();
-        cout << "\n=== 👨‍🏫 Teachers ===\n";
-        for (auto& t : teachers) t.showInfo();
+        if (tools.empty())
+            cout << "❌ No tools to display.\n";
     }
 };
+
+void showMenu() {
+    cout << "\n===== 🎓 EDU TOOLS MANAGER =====\n";
+    cout << "1. Add New Tool\n";
+    cout << "2. Show All Tools\n";
+    cout << "3. List Tools by Category\n";
+    cout << "4. Search by Title/Author\n";
+    cout << "5. Show Statistics\n";
+    cout << "6. Exit\n";
+    cout << "================================\n";
+    cout << "Enter your choice: ";
+}
 
 int main() {
-    EduCenter center;
-
+    EduToolsManager manager;
     int choice;
-    string name, email, course, teacher;
-    double grade;
+    string category, keyword;
 
     while (true) {
-        cout << "\n==== 📘 EduCenter Menu ====\n";
-        cout << "1. Add Student\n2. Add Teacher\n3. Create Course\n4. Enroll Student\n";
-        cout << "5. Grade Student\n6. Show All Courses\n7. Show All Users\n8. Exit\n";
-        cout << "Select: ";
+        showMenu();
         cin >> choice;
         cin.ignore();
 
         switch (choice) {
         case 1:
-            cout << "Enter student name: "; getline(cin, name);
-            cout << "Enter student email: "; getline(cin, email);
-            center.addStudent(name, email);
+            manager.addTool();
             break;
         case 2:
-            cout << "Enter teacher name: "; getline(cin, name);
-            cout << "Enter teacher email: "; getline(cin, email);
-            center.addTeacher(name, email);
+            manager.showAllTools();
             break;
         case 3:
-            cout << "Enter course name: "; getline(cin, course);
-            cout << "Enter teacher name: "; getline(cin, teacher);
-            center.createCourse(course, teacher);
+            cout << "Enter category (Book/Video/Test/PDF/Slides): ";
+            getline(cin, category);
+            manager.listByCategory(category);
             break;
         case 4:
-            cout << "Enter student name: "; getline(cin, name);
-            cout << "Enter course name: "; getline(cin, course);
-            center.enrollStudentToCourse(name, course);
+            cout << "Enter keyword to search (title or author): ";
+            getline(cin, keyword);
+            manager.searchByTitle(keyword);
             break;
         case 5:
-            cout << "Enter student name: "; getline(cin, name);
-            cout << "Enter course name: "; getline(cin, course);
-            cout << "Enter grade: "; cin >> grade; cin.ignore();
-            center.gradeStudent(name, course, grade);
+            manager.showStatistics();
             break;
         case 6:
-            center.showAllCourses();
-            break;
-        case 7:
-            center.showAllPeople();
-            break;
-        case 8:
-            cout << "👋 Goodbye!\n";
+            cout << "👋 Goodbye! Study well!\n";
             return 0;
         default:
-            cout << "❌ Invalid choice.\n";
+            cout << "❌ Invalid option, try again.\n";
         }
     }
 
