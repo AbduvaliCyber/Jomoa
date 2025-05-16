@@ -1,43 +1,81 @@
-#include <SFML/Graphics.hpp>
+#include <iostream>
+#include <windows.h>  // Rang uchun Windows kutubxonasi
+using namespace std;
 
-int main()
-{
-    sf::RenderWindow window(sf::VideoMode(400, 400), "Stakan chizish - SFML");
+void setColor(int color) {
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+}
 
-    // Stakan tanasi uchun to‘rtburchak
-    sf::RectangleShape glassBody(sf::Vector2f(150.f, 200.f));
-    glassBody.setPosition(125.f, 100.f);
-    glassBody.setFillColor(sf::Color(173, 216, 230)); // light blue
-    glassBody.setOutlineThickness(2);
-    glassBody.setOutlineColor(sf::Color::Black);
+void showTitle(const string& title) {
+    setColor(11);  // Ochiq ko‘k rang
+    cout << "\n=== " << title << " ===\n";
+    setColor(7);   // Standart rang
+}
 
-    // Stakan pastidagi oval (suv yuzasi)
-    sf::CircleShape waterSurface(70.f, 100); // 100 burchakli doira yaqin ovalga o‘xshaydi
-    waterSurface.setPosition(130.f, 280.f);
-    waterSurface.setFillColor(sf::Color(135, 206, 235)); // sky blue
-    waterSurface.setOutlineThickness(2);
-    waterSurface.setOutlineColor(sf::Color::Blue);
+void showOverview() {
+    showTitle("Najot Ta'lim Umumiy Ma'lumot");
+    cout << "Najot Ta'lim - O'zbekistondagi yetakchi ta'lim markazi.\n";
+    cout << "2018-yilda tashkil etilgan va zamonaviy kasblar bo'yicha ta'lim beradi.\n";
+    cout << "Bitiruvchilarning 75-85% doimiy ish bilan ta'minlanadi.\n";
+}
 
-    // Yorqinlik uchun oq ovoid (kichik doira)
-    sf::CircleShape shine(20.f);
-    shine.setPosition(230.f, 120.f);
-    shine.setFillColor(sf::Color::White);
+void showCourses() {
+    showTitle("Kurslar");
+    cout << "1. Dasturlash: Python, JavaScript, React, Node.js, QA\n";
+    cout << "2. Dizayn: Grafik dizayn, UX/UI dizayn\n";
+    cout << "3. Marketing: SMM, Digital marketing\n";
+    cout << "Kurslar Bootcamp va Standart shaklda taklif qilinadi.\n";
+}
 
-    while (window.isOpen())
-    {
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed)
-                window.close();
+void showBranches() {
+    showTitle("Filiallar");
+    cout << "Toshkent: Xadra, Chilonzor, Chimboy\n";
+    cout << "Viloyatlar: Farg'ona, Samarqand, Xorazm\n";
+}
+
+void showContacts() {
+    showTitle("Aloqa");
+    cout << "Telefon: +998 78 888 98 88\n";
+    cout << "Veb-sayt: https://najottalim.uz\n";
+    cout << "Telegram: @najottalim\n";
+}
+
+int main() {
+    int choice;
+
+    setColor(14); // Sariq rang bilan salomlashish
+    cout << "Najot Ta'lim haqida interaktiv dasturga xush kelibsiz!\n";
+    setColor(7);  // Standart rang
+
+    do {
+        setColor(10); // Yashil rang
+        cout << "\n===== Menyu =====\n";
+        setColor(7);
+        cout << "1. Umumiy ma'lumot\n";
+        cout << "2. Kurslar\n";
+        cout << "3. Filiallar\n";
+        cout << "4. Aloqa\n";
+        cout << "0. Chiqish\n";
+        cout << "Tanlovingiz: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1: showOverview(); break;
+            case 2: showCourses(); break;
+            case 3: showBranches(); break;
+            case 4: showContacts(); break;
+            case 0:
+                setColor(12); // Qizil rang
+                cout << "Dasturdan chiqish...\n";
+                break;
+            default:
+                setColor(12); // Qizil rang
+                cout << "Noto'g'ri tanlov, qaytadan urinib ko'ring.\n";
+                setColor(7);
+                break;
         }
+    } while (choice != 0);
 
-        window.clear(sf::Color::White);
-        window.draw(glassBody);
-        window.draw(waterSurface);
-        window.draw(shine);
-        window.display();
-    }
-
+    setColor(7); // Rangni tiklash
     return 0;
 }
