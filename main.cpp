@@ -2,151 +2,171 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <algorithm>
 
 using namespace std;
 
-// Baza sinf: Televizor
-class Television {
+// Bazaviy Gilam sinfi
+class Carpet {
 protected:
-    string brand;
-    int screenSize;
+    string name;
+    string material;
+    double length;
+    double width;
     double price;
-    bool isOn;
-    int volume;
-    int channel;
+    string origin;
 
 public:
-    Television(string br, int size, double pr)
-        : brand(br), screenSize(size), price(pr), isOn(false), volume(10), channel(1) {}
+    Carpet(string n, string m, double l, double w, double p, string o)
+        : name(n), material(m), length(l), width(w), price(p), origin(o) {}
 
-    virtual void powerOn() {
-        isOn = true;
-        cout << brand << " televizori yoqildi.\n";
-    }
-
-    virtual void powerOff() {
-        isOn = false;
-        cout << brand << " televizori o‘chirildi.\n";
-    }
-
-    virtual void volumeUp() {
-        if (isOn && volume < 100) {
-            volume++;
-            cout << brand << " ovozi: " << volume << endl;
-        }
-    }
-
-    virtual void volumeDown() {
-        if (isOn && volume > 0) {
-            volume--;
-            cout << brand << " ovozi: " << volume << endl;
-        }
-    }
-
-    virtual void changeChannel(int ch) {
-        if (isOn && ch > 0 && ch <= 999) {
-            channel = ch;
-            cout << brand << " kanal o‘zgartirildi: " << channel << endl;
-        }
+    virtual double area() const {
+        return length * width;
     }
 
     virtual void showInfo() const {
-        cout << "📺 Brend: " << brand
-             << ", O‘lcham: " << screenSize << "\""
-             << ", Narx: $" << price
-             << ", Holati: " << (isOn ? "Yoqilgan" : "O‘chirilgan")
-             << ", Ovoz: " << volume
-             << ", Kanal: " << channel << endl;
+        cout << "🧶 Nomi: " << name
+             << ", Materiali: " << material
+             << ", O‘lchami: " << length << "m x " << width << "m"
+             << ", Maydoni: " << area() << "m²"
+             << ", Narxi: $" << price
+             << ", Ishlab chiqarilgan joyi: " << origin << endl;
     }
 
-    virtual ~Television() {}
+    virtual double getPrice() const {
+        return price;
+    }
+
+    virtual string getName() const {
+        return name;
+    }
+
+    virtual ~Carpet() {}
 };
 
-// Merosxo‘r sinf: Smart TV
-class SmartTV : public Television {
+// Qo‘lda to‘qilgan gilam sinfi
+class HandmadeCarpet : public Carpet {
 private:
-    vector<string> apps;
+    int knotsPerSquareInch;
 
 public:
-    SmartTV(string br, int size, double pr)
-        : Television(br, size, pr) {
-        apps = {"YouTube", "Netflix", "HBO Max"};
-    }
-
-    void openApp(const string& appName) {
-        if (isOn) {
-            for (const string& app : apps) {
-                if (app == appName) {
-                    cout << brand << " da " << appName << " ochildi.\n";
-                    return;
-                }
-            }
-            cout << appName << " ilovasi topilmadi.\n";
-        }
-    }
+    HandmadeCarpet(string n, string m, double l, double w, double p, string o, int kpsi)
+        : Carpet(n, m, l, w, p, o), knotsPerSquareInch(kpsi) {}
 
     void showInfo() const override {
-        Television::showInfo();
-        cout << "📱 Ilovalar: ";
-        for (const string& app : apps) {
-            cout << app << " ";
-        }
-        cout << endl;
+        Carpet::showInfo();
+        cout << "   ➤ Qo‘lda to‘qilgan (Tugun zichligi: " << knotsPerSquareInch << " PSI)\n";
     }
 };
 
-// Televizorlar ro‘yxatini boshqaruvchi menejer sinf
-class TVManager {
+// Mashinada to‘qilgan gilam sinfi
+class MachineMadeCarpet : public Carpet {
 private:
-    vector<shared_ptr<Television>> tvList;
+    string machineType;
 
 public:
-    void addTV(shared_ptr<Television> tv) {
-        tvList.push_back(tv);
+    MachineMadeCarpet(string n, string m, double l, double w, double p, string o, string mt)
+        : Carpet(n, m, l, w, p, o), machineType(mt) {}
+
+    void showInfo() const override {
+        Carpet::showInfo();
+        cout << "   ➤ Mashinada to‘qilgan (Stanok turi: " << machineType << ")\n";
+    }
+};
+
+// Gilamlarni boshqaruvchi sinf
+class CarpetManager {
+private:
+    vector<shared_ptr<Carpet>> carpets;
+
+public:
+    void addCarpet(shared_ptr<Carpet> carpet) {
+        carpets.push_back(carpet);
     }
 
-    void listAllTVs() {
-        cout << "\n=== Televizorlar ro‘yxati ===\n";
-        for (size_t i = 0; i < tvList.size(); ++i) {
-            cout << "ID: " << i + 1 << " -> ";
-            tvList[i]->showInfo();
+    void listCarpets() {
+        cout << "\n=== Gilamlar ro‘yxati ===\n";
+        for (size_t i = 0; i < carpets.size(); ++i) {
+            cout << "ID: " << i + 1 << " → ";
+            carpets[i]->showInfo();
         }
     }
 
-    void controlTV(int index) {
-        if (index >= 0 && index < (int)tvList.size()) {
-            auto& tv = tvList[index];
-            tv->powerOn();
-            tv->changeChannel(5);
-            tv->volumeUp();
-            tv->volumeDown();
-            if (SmartTV* smart = dynamic_cast<SmartTV*>(tv.get())) {
-                smart->openApp("YouTube");
+    void sortByPrice(bool ascending = true) {
+        sort(carpets.begin(), carpets.end(), [ascending](shared_ptr<Carpet> a, shared_ptr<Carpet> b) {
+            return ascending ? a->getPrice() < b->getPrice() : a->getPrice() > b->getPrice();
+        });
+        cout << (ascending ? "\nNarx bo‘yicha o‘sish tartibida" : "\nNarx bo‘yicha kamayish tartibida") << " saralandi.\n";
+    }
+
+    void searchByName(const string& keyword) {
+        cout << "\n🔍 Qidiruv natijalari (kalit: \"" << keyword << "\"):\n";
+        bool found = false;
+        for (auto& c : carpets) {
+            if (c->getName().find(keyword) != string::npos) {
+                c->showInfo();
+                found = true;
             }
-            tv->powerOff();
-        } else {
-            cout << "Noto‘g‘ri ID kiritildi.\n";
+        }
+        if (!found) {
+            cout << "Hech qanday mos gilam topilmadi.\n";
         }
     }
 };
 
+// Interaktiv menyu
+void showMenu() {
+    cout << "\n=== GILAMLAR TIZIMI ===\n";
+    cout << "1. Gilamlar ro‘yxatini ko‘rsatish\n";
+    cout << "2. Narx bo‘yicha saralash (oshish)\n";
+    cout << "3. Narx bo‘yicha saralash (kamayish)\n";
+    cout << "4. Nomi bo‘yicha qidirish\n";
+    cout << "0. Chiqish\n";
+    cout << "Tanlovingiz: ";
+}
+
 int main() {
-    TVManager manager;
+    CarpetManager manager;
 
-    shared_ptr<Television> tv1 = make_shared<Television>("Samsung", 42, 499.99);
-    shared_ptr<Television> tv2 = make_shared<SmartTV>("LG", 55, 899.99);
-    shared_ptr<Television> tv3 = make_shared<SmartTV>("Sony", 65, 1199.99);
-
-    manager.addTV(tv1);
-    manager.addTV(tv2);
-    manager.addTV(tv3);
-
-    manager.listAllTVs();
+    // Ba'zi gilamlarni qo‘shamiz
+    manager.addCarpet(make_shared<HandmadeCarpet>("Buxoro Lux", "Jun", 2.5, 3.0, 750.00, "O‘zbekiston", 120));
+    manager.addCarpet(make_shared<MachineMadeCarpet>("Antep Gold", "Sintetik", 2.0, 3.0, 350.00, "Turkiya", "Jacquard"));
+    manager.addCarpet(make_shared<HandmadeCarpet>("Qom Classic", "Ipak", 1.5, 2.5, 1200.00, "Eron", 220));
+    manager.addCarpet(make_shared<MachineMadeCarpet>("Istanbul Style", "Aralash", 2.4, 3.5, 450.00, "Turkiya", "Loomax"));
 
     int choice;
-    cout << "\nQaysi televizorni boshqarmoqchisiz? (ID ni kiriting): ";
-    cin >> choice;
-    manager.controlTV(choice - 1);
+    string keyword;
+
+    do {
+        showMenu();
+        cin >> choice;
+        cin.ignore();
+
+        switch (choice) {
+            case 1:
+                manager.listCarpets();
+                break;
+            case 2:
+                manager.sortByPrice(true);
+                manager.listCarpets();
+                break;
+            case 3:
+                manager.sortByPrice(false);
+                manager.listCarpets();
+                break;
+            case 4:
+                cout << "Qidirilayotgan so‘zni kiriting: ";
+                getline(cin, keyword);
+                manager.searchByName(keyword);
+                break;
+            case 0:
+                cout << "Dasturdan chiqilmoqda...\n";
+                break;
+            default:
+                cout << "Noto‘g‘ri tanlov. Qaytadan urinib ko‘ring.\n";
+        }
+
+    } while (choice != 0);
 
     return 0;
 }
