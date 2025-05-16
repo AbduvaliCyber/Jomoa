@@ -1,166 +1,225 @@
 #include <iostream>
 #include <vector>
 #include <map>
-#include <ctime>
+#include <string>
+#include <iomanip>
 
 using namespace std;
 
-string getCurrentTime() {
-    time_t now = time(0);
-    char* dt = ctime(&now);
-    return string(dt);
-}
+// Forward declarations
+class Course;
 
-class Commit {
-public:
-    string message;
-    string timestamp;
-
-    Commit(string msg) {
-        message = msg;
-        timestamp = getCurrentTime();
-    }
-
-    void display() {
-        cout << "Commit: " << message << " at " << timestamp;
-    }
-};
-
-class Branch {
+class Person {
 public:
     string name;
-    vector<Commit> commits;
+    string email;
 
-    Branch(string branchName) {
-        name = branchName;
+    Person(string n, string e) : name(n), email(e) {}
+
+    virtual void showInfo() = 0;
+};
+
+class Student : public Person {
+public:
+    map<string, double> grades;
+
+    Student(string n, string e) : Person(n, e) {}
+
+    void addGrade(string courseName, double grade) {
+        grades[courseName] = grade;
     }
 
-    void addCommit(string message) {
-        commits.emplace_back(message);
-    }
-
-    void showHistory() {
-        cout << "Branch: " << name << endl;
-        for (auto& c : commits) {
-            c.display();
+    void showInfo() override {
+        cout << "👩‍🎓 Student: " << name << " | Email: " << email << endl;
+        for (auto& g : grades) {
+            cout << "  📚 " << g.first << ": " << g.second << " ball" << endl;
         }
     }
 };
 
-class Repository {
+class Teacher : public Person {
+public:
+    vector<string> teachingCourses;
+
+    Teacher(string n, string e) : Person(n, e) {}
+
+    void assignCourse(string courseName) {
+        teachingCourses.push_back(courseName);
+    }
+
+    void showInfo() override {
+        cout << "👨‍🏫 Teacher: " << name << " | Email: " << email << endl;
+        for (auto& c : teachingCourses) {
+            cout << "  📘 Teaching: " << c << endl;
+        }
+    }
+};
+
+class Course {
 public:
     string name;
-    map<string, Branch> branches;
+    Teacher* instructor;
+    vector<Student*> students;
 
-    Repository(string repoName) {
-        name = repoName;
-        branches["main"] = Branch("main");
+    Course(string courseName, Teacher* t) : name(courseName), instructor(t) {
+        instructor->assignCourse(name);
     }
 
-    void createBranch(string branchName) {
-        if (branches.find(branchName) == branches.end()) {
-            branches[branchName] = Branch(branchName);
-            cout << "Branch '" << branchName << "' created.\n";
-        } else {
-            cout << "Branch already exists.\n";
-        }
+    void enrollStudent(Student* s) {
+        students.push_back(s);
     }
 
-    void commit(string branchName, string message) {
-        if (branches.find(branchName) != branches.end()) {
-            branches[branchName].addCommit(message);
-            cout << "Commit added to branch '" << branchName << "'.\n";
-        } else {
-            cout << "Branch not found.\n";
-        }
-    }
-
-    void log(string branchName) {
-        if (branches.find(branchName) != branches.end()) {
-            branches[branchName].showHistory();
-        } else {
-            cout << "Branch not found.\n";
+    void showCourseInfo() {
+        cout << "\n📚 Course: " << name << endl;
+        cout << "  👨‍🏫 Instructor: " << instructor->name << endl;
+        cout << "  👥 Enrolled Students:\n";
+        for (auto* s : students) {
+            cout << "    - " << s->name << endl;
         }
     }
 };
 
-class User {
+class EduCenter {
+private:
+    vector<Student> students;
+    vector<Teacher> teachers;
+    vector<Course> courses;
+
 public:
-    string username;
-    vector<Repository> repositories;
-
-    User(string uname) {
-        username = uname;
+    void addStudent(string name, string email) {
+        students.emplace_back(name, email);
+        cout << "✅ Student added: " << name << endl;
     }
 
-    void createRepo(string repoName) {
-        repositories.emplace_back(repoName);
-        cout << "Repository '" << repoName << "' created.\n";
+    void addTeacher(string name, string email) {
+        teachers.emplace_back(name, email);
+        cout << "✅ Teacher added: " << name << endl;
     }
 
-    Repository* getRepo(string repoName) {
-        for (auto& repo : repositories) {
-            if (repo.name == repoName) {
-                return &repo;
-            }
+    Student* findStudent(string name) {
+        for (auto& s : students) {
+            if (s.name == name)
+                return &s;
         }
-        cout << "Repository not found.\n";
         return nullptr;
+    }
+
+    Teacher* findTeacher(string name) {
+        for (auto& t : teachers) {
+            if (t.name == name)
+                return &t;
+        }
+        return nullptr;
+    }
+
+    Course* findCourse(string name) {
+        for (auto& c : courses) {
+            if (c.name == name)
+                return &c;
+        }
+        return nullptr;
+    }
+
+    void createCourse(string courseName, string teacherName) {
+        Teacher* t = findTeacher(teacherName);
+        if (t) {
+            courses.emplace_back(courseName, t);
+            cout << "✅ Course created: " << courseName << endl;
+        } else {
+            cout << "❌ Teacher not found!\n";
+        }
+    }
+
+    void enrollStudentToCourse(string studentName, string courseName) {
+        Student* s = findStudent(studentName);
+        Course* c = findCourse(courseName);
+        if (s && c) {
+            c->enrollStudent(s);
+            cout << "📥 Enrolled " << s->name << " to " << c->name << endl;
+        } else {
+            cout << "❌ Student or Course not found!\n";
+        }
+    }
+
+    void gradeStudent(string studentName, string courseName, double grade) {
+        Student* s = findStudent(studentName);
+        if (s) {
+            s->addGrade(courseName, grade);
+            cout << "✅ Graded " << s->name << ": " << courseName << " = " << grade << endl;
+        } else {
+            cout << "❌ Student not found!\n";
+        }
+    }
+
+    void showAllCourses() {
+        for (auto& c : courses) {
+            c.showCourseInfo();
+        }
+    }
+
+    void showAllPeople() {
+        cout << "\n=== 👩‍🎓 Students ===\n";
+        for (auto& s : students) s.showInfo();
+        cout << "\n=== 👨‍🏫 Teachers ===\n";
+        for (auto& t : teachers) t.showInfo();
     }
 };
 
 int main() {
-    vector<User> users;
-    string uname;
-    cout << "Enter your username: ";
-    cin >> uname;
-    User user(uname);
-    users.push_back(user);
+    EduCenter center;
 
     int choice;
+    string name, email, course, teacher;
+    double grade;
+
     while (true) {
-        cout << "\n1. Create Repository\n2. Create Branch\n3. Commit\n4. Show Log\n5. Exit\nChoice: ";
+        cout << "\n==== 📘 EduCenter Menu ====\n";
+        cout << "1. Add Student\n2. Add Teacher\n3. Create Course\n4. Enroll Student\n";
+        cout << "5. Grade Student\n6. Show All Courses\n7. Show All Users\n8. Exit\n";
+        cout << "Select: ";
         cin >> choice;
-        string repoName, branchName, message;
+        cin.ignore();
 
         switch (choice) {
         case 1:
-            cout << "Enter repository name: ";
-            cin >> repoName;
-            users[0].createRepo(repoName);
+            cout << "Enter student name: "; getline(cin, name);
+            cout << "Enter student email: "; getline(cin, email);
+            center.addStudent(name, email);
             break;
         case 2:
-            cout << "Enter repository name: ";
-            cin >> repoName;
-            cout << "Enter branch name: ";
-            cin >> branchName;
-            if (auto repo = users[0].getRepo(repoName))
-                repo->createBranch(branchName);
+            cout << "Enter teacher name: "; getline(cin, name);
+            cout << "Enter teacher email: "; getline(cin, email);
+            center.addTeacher(name, email);
             break;
         case 3:
-            cout << "Enter repository name: ";
-            cin >> repoName;
-            cout << "Enter branch name: ";
-            cin.ignore();
-            getline(cin, branchName);
-            cout << "Enter commit message: ";
-            getline(cin, message);
-            if (auto repo = users[0].getRepo(repoName))
-                repo->commit(branchName, message);
+            cout << "Enter course name: "; getline(cin, course);
+            cout << "Enter teacher name: "; getline(cin, teacher);
+            center.createCourse(course, teacher);
             break;
         case 4:
-            cout << "Enter repository name: ";
-            cin >> repoName;
-            cout << "Enter branch name: ";
-            cin >> branchName;
-            if (auto repo = users[0].getRepo(repoName))
-                repo->log(branchName);
+            cout << "Enter student name: "; getline(cin, name);
+            cout << "Enter course name: "; getline(cin, course);
+            center.enrollStudentToCourse(name, course);
             break;
         case 5:
-            cout << "Goodbye!\n";
+            cout << "Enter student name: "; getline(cin, name);
+            cout << "Enter course name: "; getline(cin, course);
+            cout << "Enter grade: "; cin >> grade; cin.ignore();
+            center.gradeStudent(name, course, grade);
+            break;
+        case 6:
+            center.showAllCourses();
+            break;
+        case 7:
+            center.showAllPeople();
+            break;
+        case 8:
+            cout << "👋 Goodbye!\n";
             return 0;
         default:
-            cout << "Invalid choice.\n";
+            cout << "❌ Invalid choice.\n";
         }
     }
+
+    return 0;
 }
