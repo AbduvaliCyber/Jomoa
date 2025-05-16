@@ -1,99 +1,152 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <iomanip>
+#include <memory>
+
 using namespace std;
 
-// Asosiy Uy klassi
-class Uy {
+// Baza sinf: Televizor
+class Television {
 protected:
-    string manzil;
-    int xonaSoni;
-    double maydon;
-    bool hovliBormi;
+    string brand;
+    int screenSize;
+    double price;
+    bool isOn;
+    int volume;
+    int channel;
 
 public:
-    Uy(string m, int x, double y, bool h)
-        : manzil(m), xonaSoni(x), maydon(y), hovliBormi(h) {}
+    Television(string br, int size, double pr)
+        : brand(br), screenSize(size), price(pr), isOn(false), volume(10), channel(1) {}
 
-    virtual void info() const {
-        cout << "Manzil: " << manzil << endl;
-        cout << "Xona soni: " << xonaSoni << endl;
-        cout << "Maydon: " << maydon << " m2" << endl;
-        cout << "Hovli: " << (hovliBormi ? "Bor" : "Yo'q") << endl;
+    virtual void powerOn() {
+        isOn = true;
+        cout << brand << " televizori yoqildi.\n";
     }
 
-    virtual ~Uy() {}
-};
-
-// Kvartira klassi
-class Kvartira : public Uy {
-    int qavat;
-    bool liftBormi;
-
-public:
-    Kvartira(string m, int x, double y, bool h, int q, bool l)
-        : Uy(m, x, y, h), qavat(q), liftBormi(l) {}
-
-    void info() const override {
-        cout << "---- Kvartira ----" << endl;
-        Uy::info();
-        cout << "Qavat: " << qavat << endl;
-        cout << "Lift: " << (liftBormi ? "Bor" : "Yo'q") << endl;
-    }
-};
-
-// Hovli uyi klassi
-class HovliUy : public Uy {
-    bool garaj;
-    double tomorqa;
-
-public:
-    HovliUy(string m, int x, double y, bool h, bool g, double t)
-        : Uy(m, x, y, h), garaj(g), tomorqa(t) {}
-
-    void info() const override {
-        cout << "---- Hovli uyi ----" << endl;
-        Uy::info();
-        cout << "Garaj: " << (garaj ? "Bor" : "Yo'q") << endl;
-        cout << "Tomorqa: " << tomorqa << " m2" << endl;
-    }
-};
-
-// Uylar ro‘yxatini boshqaruvchi tizim
-class UyBoshqaruvTizimi {
-    vector<Uy*> uylar;
-
-public:
-    void uyQo‘sh(Uy* uy) {
-        uylar.push_back(uy);
+    virtual void powerOff() {
+        isOn = false;
+        cout << brand << " televizori o‘chirildi.\n";
     }
 
-    void barchaUylar() const {
-        cout << "\n--- Barcha uylar ro'yxati ---\n";
-        for (const auto& uy : uylar) {
-            uy->info();
-            cout << "----------------------------\n";
+    virtual void volumeUp() {
+        if (isOn && volume < 100) {
+            volume++;
+            cout << brand << " ovozi: " << volume << endl;
         }
     }
 
-    ~UyBoshqaruvTizimi() {
-        for (auto& uy : uylar) {
-            delete uy;
+    virtual void volumeDown() {
+        if (isOn && volume > 0) {
+            volume--;
+            cout << brand << " ovozi: " << volume << endl;
+        }
+    }
+
+    virtual void changeChannel(int ch) {
+        if (isOn && ch > 0 && ch <= 999) {
+            channel = ch;
+            cout << brand << " kanal o‘zgartirildi: " << channel << endl;
+        }
+    }
+
+    virtual void showInfo() const {
+        cout << "📺 Brend: " << brand
+             << ", O‘lcham: " << screenSize << "\""
+             << ", Narx: $" << price
+             << ", Holati: " << (isOn ? "Yoqilgan" : "O‘chirilgan")
+             << ", Ovoz: " << volume
+             << ", Kanal: " << channel << endl;
+    }
+
+    virtual ~Television() {}
+};
+
+// Merosxo‘r sinf: Smart TV
+class SmartTV : public Television {
+private:
+    vector<string> apps;
+
+public:
+    SmartTV(string br, int size, double pr)
+        : Television(br, size, pr) {
+        apps = {"YouTube", "Netflix", "HBO Max"};
+    }
+
+    void openApp(const string& appName) {
+        if (isOn) {
+            for (const string& app : apps) {
+                if (app == appName) {
+                    cout << brand << " da " << appName << " ochildi.\n";
+                    return;
+                }
+            }
+            cout << appName << " ilovasi topilmadi.\n";
+        }
+    }
+
+    void showInfo() const override {
+        Television::showInfo();
+        cout << "📱 Ilovalar: ";
+        for (const string& app : apps) {
+            cout << app << " ";
+        }
+        cout << endl;
+    }
+};
+
+// Televizorlar ro‘yxatini boshqaruvchi menejer sinf
+class TVManager {
+private:
+    vector<shared_ptr<Television>> tvList;
+
+public:
+    void addTV(shared_ptr<Television> tv) {
+        tvList.push_back(tv);
+    }
+
+    void listAllTVs() {
+        cout << "\n=== Televizorlar ro‘yxati ===\n";
+        for (size_t i = 0; i < tvList.size(); ++i) {
+            cout << "ID: " << i + 1 << " -> ";
+            tvList[i]->showInfo();
+        }
+    }
+
+    void controlTV(int index) {
+        if (index >= 0 && index < (int)tvList.size()) {
+            auto& tv = tvList[index];
+            tv->powerOn();
+            tv->changeChannel(5);
+            tv->volumeUp();
+            tv->volumeDown();
+            if (SmartTV* smart = dynamic_cast<SmartTV*>(tv.get())) {
+                smart->openApp("YouTube");
+            }
+            tv->powerOff();
+        } else {
+            cout << "Noto‘g‘ri ID kiritildi.\n";
         }
     }
 };
 
-// Asosiy funksiya
 int main() {
-    UyBoshqaruvTizimi tizim;
+    TVManager manager;
 
-    tizim.uyQo‘sh(new Kvartira("Toshkent, Chilonzor", 3, 85.5, false, 5, true));
-    tizim.uyQo‘sh(new HovliUy("Samarqand, Past Darg'om", 4, 120.0, true, true, 250.5));
-    tizim.uyQo‘sh(new Kvartira("Andijon, Asaka", 2, 60.0, false, 2, false));
-    tizim.uyQo‘sh(new HovliUy("Farg'ana, Buvayda", 5, 150.0, true, false, 400.0));
+    shared_ptr<Television> tv1 = make_shared<Television>("Samsung", 42, 499.99);
+    shared_ptr<Television> tv2 = make_shared<SmartTV>("LG", 55, 899.99);
+    shared_ptr<Television> tv3 = make_shared<SmartTV>("Sony", 65, 1199.99);
 
-    tizim.barchaUylar();
+    manager.addTV(tv1);
+    manager.addTV(tv2);
+    manager.addTV(tv3);
+
+    manager.listAllTVs();
+
+    int choice;
+    cout << "\nQaysi televizorni boshqarmoqchisiz? (ID ni kiriting): ";
+    cin >> choice;
+    manager.controlTV(choice - 1);
 
     return 0;
 }
