@@ -1,81 +1,98 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <limits>
 using namespace std;
 
-struct Telefon {
-    string brend;
-    string model;
-    int yil;
-    double narx;
+class Stul {
+private:
+    string rang;
+    string material;
+public:
+    Stul(string r, string m) : rang(r), material(m) {}
+
+    void show() const {
+        cout << "    Stul - Rang: " << rang << ", Material: " << material << endl;
+    }
 };
 
-void telefonQoshish(vector<Telefon>& roxat) {
-    Telefon t;
-    cout << "Brend kiriting: ";
-    cin >> t.brend;
-    cout << "Model kiriting: ";
-    cin >> t.model;
-    cout << "Chiqqan yilini kiriting: ";
-    cin >> t.yil;
-    cout << "Narxini kiriting: ";
-    cin >> t.narx;
-    roxat.push_back(t);
-    cout << "✅ Telefon muvaffaqiyatli qo‘shildi!\n";
+class Stol {
+private:
+    string rang;
+    string material;
+    vector<Stul> stullar;
+public:
+    Stol(string r, string m) : rang(r), material(m) {}
+
+    void stulQosh(const Stul& s) {
+        stullar.push_back(s);
+    }
+
+    void show() const {
+        cout << "Stol - Rang: " << rang << ", Material: " << material << endl;
+        cout << "Stullar soni: " << stullar.size() << endl;
+        for (const auto& stul : stullar) {
+            stul.show();
+        }
+        cout << endl;
+    }
+};
+
+void stolQoshish(vector<Stol>& stolalar) {
+    string rang, material;
+    cout << "Stol rangini kiriting: ";
+    cin >> rang;
+    cout << "Stol materialini kiriting: ";
+    cin >> material;
+    Stol yangiStol(rang, material);
+    stolalar.push_back(yangiStol);
+    cout << "✅ Stol qo'shildi!\n";
 }
 
-void barchaTelefonlar(const vector<Telefon>& roxat) {
-    if (roxat.empty()) {
-        cout << "📭 Telefonlar ro‘yxati bo‘sh.\n";
+void stulQoshish(vector<Stol>& stolalar) {
+    if (stolalar.empty()) {
+        cout << "⚠️ Stol mavjud emas. Iltimos, avval stol qo'shing.\n";
         return;
     }
 
-    cout << "\n📱 Telefonlar ro‘yxati:\n";
-    for (size_t i = 0; i < roxat.size(); ++i) {
-        cout << i + 1 << ". " << roxat[i].brend << " "
-             << roxat[i].model << " - $" << roxat[i].narx
-             << " (" << roxat[i].yil << ")\n";
+    cout << "Qaysi stolga stul qo'shmoqchisiz? Stollar ro'yxati:\n";
+    for (size_t i = 0; i < stolalar.size(); ++i) {
+        cout << i + 1 << ". Rang: " << stolalar[i].rang << ", Material: " << stolalar[i].material << endl;
     }
-}
-
-void filterYilBoyicha(const vector<Telefon>& roxat, int yil) {
-    bool topildi = false;
-    for (const auto& t : roxat) {
-        if (t.yil == yil) {
-            cout << t.brend << " " << t.model << " - $" << t.narx << " (" << t.yil << ")\n";
-            topildi = true;
-        }
-    }
-    if (!topildi) {
-        cout << "🛑 " << yil << " yilga oid telefon topilmadi.\n";
-    }
-}
-
-void engQimmatTelefon(const vector<Telefon>& roxat) {
-    if (roxat.empty()) {
-        cout << "📭 Telefonlar ro‘yxati bo‘sh.\n";
+    cout << "Stol raqamini kiriting: ";
+    int index;
+    cin >> index;
+    if (index < 1 || index > (int)stolalar.size()) {
+        cout << "❌ Noto'g'ri raqam!\n";
         return;
     }
 
-    const Telefon* maxTel = &roxat[0];
-    for (const auto& t : roxat) {
-        if (t.narx > maxTel->narx) {
-            maxTel = &t;
-        }
-    }
+    string rang, material;
+    cout << "Stul rangini kiriting: ";
+    cin >> rang;
+    cout << "Stul materialini kiriting: ";
+    cin >> material;
+    Stul yangiStul(rang, material);
+    stolalar[index - 1].stulQosh(yangiStul);
+    cout << "✅ Stul qo'shildi!\n";
+}
 
-    cout << "💰 Eng qimmat telefon: " << maxTel->brend << " " << maxTel->model
-         << " - $" << maxTel->narx << " (" << maxTel->yil << ")\n";
+void barchaStollarniKorish(const vector<Stol>& stolalar) {
+    if (stolalar.empty()) {
+        cout << "⚠️ Stol ro'yxati bo'sh.\n";
+        return;
+    }
+    cout << "\n--- Barcha stollar ---\n";
+    for (const auto& stol : stolalar) {
+        stol.show();
+    }
 }
 
 int menyu() {
     int tanlov;
-    cout << "\n--- Telefon Bazasini Boshqarish ---\n";
-    cout << "1. Telefon qo‘shish\n";
-    cout << "2. Barcha telefonlarni ko‘rish\n";
-    cout << "3. Yil bo‘yicha qidirish\n";
-    cout << "4. Eng qimmat telefon\n";
+    cout << "\n--- Stol va stullar boshqaruvi ---\n";
+    cout << "1. Stol qo'shish\n";
+    cout << "2. Stul qo'shish\n";
+    cout << "3. Barcha stollarni ko'rish\n";
     cout << "0. Chiqish\n";
     cout << "Tanlovingiz: ";
     cin >> tanlov;
@@ -83,33 +100,26 @@ int menyu() {
 }
 
 int main() {
-    vector<Telefon> telefonlar;
+    vector<Stol> stolalar;
     int tanlov;
 
     do {
         tanlov = menyu();
         switch (tanlov) {
             case 1:
-                telefonQoshish(telefonlar);
+                stolQoshish(stolalar);
                 break;
             case 2:
-                barchaTelefonlar(telefonlar);
+                stulQoshish(stolalar);
                 break;
-            case 3: {
-                int yil;
-                cout << "Qaysi yilni qidirmoqchisiz? ";
-                cin >> yil;
-                filterYilBoyicha(telefonlar, yil);
-                break;
-            }
-            case 4:
-                engQimmatTelefon(telefonlar);
+            case 3:
+                barchaStollarniKorish(stolalar);
                 break;
             case 0:
-                cout << "Dasturdan chiqildi.\n";
+                cout << "Dasturdan chiqildi. Xayr!\n";
                 break;
             default:
-                cout << "Noto‘g‘ri tanlov. Qayta urinib ko‘ring.\n";
+                cout << "Noto'g'ri tanlov, qayta urinib ko'ring.\n";
         }
     } while (tanlov != 0);
 
