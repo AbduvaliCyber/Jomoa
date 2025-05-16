@@ -1,199 +1,117 @@
 #include <iostream>
-#include <string>
 #include <vector>
-
+#include <string>
+#include <limits>
 using namespace std;
 
-// Baza klass - Eshik
-class Door {
-protected:
-    string material;
-    bool isOpen;
-
-public:
-    Door(string mat) : material(mat), isOpen(false) {}
-
-    virtual void open() {
-        if (!isOpen) {
-            isOpen = true;
-            cout << "Eshik ochildi.\n";
-        } else {
-            cout << "Eshik allaqachon ochiq.\n";
-        }
-    }
-
-    virtual void close() {
-        if (isOpen) {
-            isOpen = false;
-            cout << "Eshik yopildi.\n";
-        } else {
-            cout << "Eshik allaqachon yopiq.\n";
-        }
-    }
-
-    virtual void info() const {
-        cout << "Material: " << material << ", Holati: " << (isOpen ? "Ochiq" : "Yopiq") << endl;
-    }
-
-    virtual ~Door() {}
+struct Telefon {
+    string brend;
+    string model;
+    int yil;
+    double narx;
 };
 
-// Qulfli eshik
-class LockedDoor : public Door {
-protected:
-    bool isLocked;
+void telefonQoshish(vector<Telefon>& roxat) {
+    Telefon t;
+    cout << "Brend kiriting: ";
+    cin >> t.brend;
+    cout << "Model kiriting: ";
+    cin >> t.model;
+    cout << "Chiqqan yilini kiriting: ";
+    cin >> t.yil;
+    cout << "Narxini kiriting: ";
+    cin >> t.narx;
+    roxat.push_back(t);
+    cout << "✅ Telefon muvaffaqiyatli qo‘shildi!\n";
+}
 
-public:
-    LockedDoor(string mat) : Door(mat), isLocked(true) {}
+void barchaTelefonlar(const vector<Telefon>& roxat) {
+    if (roxat.empty()) {
+        cout << "📭 Telefonlar ro‘yxati bo‘sh.\n";
+        return;
+    }
 
-    void lock() {
-        if (!isLocked) {
-            isLocked = true;
-            cout << "Eshik qulflandi.\n";
-        } else {
-            cout << "Eshik allaqachon qulflangan.\n";
+    cout << "\n📱 Telefonlar ro‘yxati:\n";
+    for (size_t i = 0; i < roxat.size(); ++i) {
+        cout << i + 1 << ". " << roxat[i].brend << " "
+             << roxat[i].model << " - $" << roxat[i].narx
+             << " (" << roxat[i].yil << ")\n";
+    }
+}
+
+void filterYilBoyicha(const vector<Telefon>& roxat, int yil) {
+    bool topildi = false;
+    for (const auto& t : roxat) {
+        if (t.yil == yil) {
+            cout << t.brend << " " << t.model << " - $" << t.narx << " (" << t.yil << ")\n";
+            topildi = true;
+        }
+    }
+    if (!topildi) {
+        cout << "🛑 " << yil << " yilga oid telefon topilmadi.\n";
+    }
+}
+
+void engQimmatTelefon(const vector<Telefon>& roxat) {
+    if (roxat.empty()) {
+        cout << "📭 Telefonlar ro‘yxati bo‘sh.\n";
+        return;
+    }
+
+    const Telefon* maxTel = &roxat[0];
+    for (const auto& t : roxat) {
+        if (t.narx > maxTel->narx) {
+            maxTel = &t;
         }
     }
 
-    void unlock() {
-        if (isLocked) {
-            isLocked = false;
-            cout << "Eshik qulfdan chiqarildi.\n";
-        } else {
-            cout << "Eshik allaqachon qulfdan chiqarilgan.\n";
-        }
-    }
+    cout << "💰 Eng qimmat telefon: " << maxTel->brend << " " << maxTel->model
+         << " - $" << maxTel->narx << " (" << maxTel->yil << ")\n";
+}
 
-    void open() override {
-        if (isLocked) {
-            cout << "Eshik qulflangan! Ochish uchun qulfdan chiqaring.\n";
-        } else {
-            Door::open();
-        }
-    }
-
-    void info() const override {
-        Door::info();
-        cout << "Qulf holati: " << (isLocked ? "Qulflangan" : "Qulfdan chiqqan") << endl;
-    }
-};
-
-// Elektron eshik
-class ElectronicDoor : public LockedDoor {
-    bool hasPower;
-
-public:
-    ElectronicDoor(string mat) : LockedDoor(mat), hasPower(true) {}
-
-    void powerOff() {
-        hasPower = false;
-        cout << "Tok o‘chdi. Eshik ishlamaydi.\n";
-    }
-
-    void powerOn() {
-        hasPower = true;
-        cout << "Tok yoqildi. Eshik faol.\n";
-    }
-
-    void open() override {
-        if (!hasPower) {
-            cout << "Tok yo‘q! Eshik ochilmaydi.\n";
-        } else {
-            LockedDoor::open();
-        }
-    }
-
-    void info() const override {
-        LockedDoor::info();
-        cout << "Elektr quvvati: " << (hasPower ? "Bor" : "Yo‘q") << endl;
-    }
-};
-
-// Bosh menyu
-void showMenu() {
-    cout << "\n--- Eshiklar Boshqaruvi ---\n";
-    cout << "1. Oddiy eshik\n";
-    cout << "2. Qulfli eshik\n";
-    cout << "3. Elektron eshik\n";
+int menyu() {
+    int tanlov;
+    cout << "\n--- Telefon Bazasini Boshqarish ---\n";
+    cout << "1. Telefon qo‘shish\n";
+    cout << "2. Barcha telefonlarni ko‘rish\n";
+    cout << "3. Yil bo‘yicha qidirish\n";
+    cout << "4. Eng qimmat telefon\n";
     cout << "0. Chiqish\n";
-    cout << "Tanlang: ";
+    cout << "Tanlovingiz: ";
+    cin >> tanlov;
+    return tanlov;
 }
 
 int main() {
-    int choice;
+    vector<Telefon> telefonlar;
+    int tanlov;
 
-    while (true) {
-        showMenu();
-        cin >> choice;
-
-        if (choice == 0) {
-            cout << "Dastur tugatildi.\n";
-            break;
+    do {
+        tanlov = menyu();
+        switch (tanlov) {
+            case 1:
+                telefonQoshish(telefonlar);
+                break;
+            case 2:
+                barchaTelefonlar(telefonlar);
+                break;
+            case 3: {
+                int yil;
+                cout << "Qaysi yilni qidirmoqchisiz? ";
+                cin >> yil;
+                filterYilBoyicha(telefonlar, yil);
+                break;
+            }
+            case 4:
+                engQimmatTelefon(telefonlar);
+                break;
+            case 0:
+                cout << "Dasturdan chiqildi.\n";
+                break;
+            default:
+                cout << "Noto‘g‘ri tanlov. Qayta urinib ko‘ring.\n";
         }
-
-        Door* door = nullptr;
-
-        if (choice == 1)
-            door = new Door("Yog‘och");
-        else if (choice == 2)
-            door = new LockedDoor("Temir");
-        else if (choice == 3)
-            door = new ElectronicDoor("Zamonaviy plastmassa");
-        else {
-            cout << "Noto‘g‘ri tanlov.\n";
-            continue;
-        }
-
-        int action;
-        do {
-            cout << "\n--- Amalni tanlang ---\n";
-            cout << "1. Ochish\n";
-            cout << "2. Yopish\n";
-            cout << "3. Ma'lumot\n";
-
-            if (LockedDoor* ld = dynamic_cast<LockedDoor*>(door)) {
-                cout << "4. Qulfdan chiqarish\n5. Qulfni yopish\n";
-            }
-
-            if (ElectronicDoor* ed = dynamic_cast<ElectronicDoor*>(door)) {
-                cout << "6. Tokni o‘chirish\n7. Tokni yoqish\n";
-            }
-
-            cout << "0. Ortga\nTanlang: ";
-            cin >> action;
-
-            switch (action) {
-                case 1: door->open(); break;
-                case 2: door->close(); break;
-                case 3: door->info(); break;
-                case 4: {
-                    if (auto ld = dynamic_cast<LockedDoor*>(door)) ld->unlock();
-                    else cout << "Bu amal mavjud emas.\n";
-                    break;
-                }
-                case 5: {
-                    if (auto ld = dynamic_cast<LockedDoor*>(door)) ld->lock();
-                    else cout << "Bu amal mavjud emas.\n";
-                    break;
-                }
-                case 6: {
-                    if (auto ed = dynamic_cast<ElectronicDoor*>(door)) ed->powerOff();
-                    else cout << "Bu amal mavjud emas.\n";
-                    break;
-                }
-                case 7: {
-                    if (auto ed = dynamic_cast<ElectronicDoor*>(door)) ed->powerOn();
-                    else cout << "Bu amal mavjud emas.\n";
-                    break;
-                }
-                case 0: break;
-                default: cout << "Noto‘g‘ri amal.\n";
-            }
-
-        } while (action != 0);
-
-        delete door;
-    }
+    } while (tanlov != 0);
 
     return 0;
 }
