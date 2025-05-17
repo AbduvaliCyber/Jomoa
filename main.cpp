@@ -1,97 +1,151 @@
 #include <iostream>
-#include <algorithm> // sort() funksiyasi uchun
+#include <fstream>
+#include <algorithm>
+#include <stdexcept>
 using namespace std;
 
-// Funksiya: massivni chiqarish
-void printArray(int arr[], int size) {
-    for(int i = 0; i < size; i++)
-        cout << arr[i] << " ";
-    cout << endl;
-}
+// ArrayManager klassi: massivlar bilan ishlash uchun
+class ArrayManager {
+private:
+    int* arr;
+    int size;
 
-// Funksiya: eng katta elementni topish
-int findMax(int arr[], int size) {
-    int maxVal = arr[0];
-    for(int i = 1; i < size; i++) {
-        if(arr[i] > maxVal)
-            maxVal = arr[i];
-    }
-    return maxVal;
-}
-
-// Funksiya: eng kichik elementni topish
-int findMin(int arr[], int size) {
-    int minVal = arr[0];
-    for(int i = 1; i < size; i++) {
-        if(arr[i] < minVal)
-            minVal = arr[i];
-    }
-    return minVal;
-}
-
-// Funksiya: massivda elementni qidirish
-int linearSearch(int arr[], int size, int target) {
-    for(int i = 0; i < size; i++) {
-        if(arr[i] == target)
-            return i; // indeks qaytadi
-    }
-    return -1; // topilmadi
-}
-
-int main() {
-    // 1. Oddiy massiv (statik)
-    const int SIZE = 5;
-    int nums[SIZE] = {10, 20, 5, 8, 15};
-
-    cout << "Statik massiv elementlari: ";
-    printArray(nums, SIZE);
-
-    cout << "Eng katta element: " << findMax(nums, SIZE) << endl;
-    cout << "Eng kichik element: " << findMin(nums, SIZE) << endl;
-
-    int key = 8;
-    int foundIndex = linearSearch(nums, SIZE, key);
-    if(foundIndex != -1)
-        cout << key << " elementi " << foundIndex << "-indeksta topildi." << endl;
-    else
-        cout << key << " elementi topilmadi." << endl;
-
-    // 2. Dinamik massiv
-    int n;
-    cout << "\nDinamik massiv o‘lchamini kiriting: ";
-    cin >> n;
-
-    int* dynArray = new int[n];
-    cout << n << " ta element kiriting:\n";
-    for(int i = 0; i < n; i++) {
-        cout << "Element " << i + 1 << ": ";
-        cin >> dynArray[i];
+public:
+    // Konstruktor (dinamik massiv yaratadi)
+    ArrayManager(int n) : size(n) {
+        if (size <= 0)
+            throw invalid_argument("Massiv o'lchami musbat bo'lishi kerak");
+        arr = new int[size];
     }
 
-    cout << "Dinamik massiv: ";
-    printArray(dynArray, n);
+    // Destruktor
+    ~ArrayManager() {
+        delete[] arr;
+    }
 
-    // Sortlash
-    sort(dynArray, dynArray + n);
-    cout << "Saralangan massiv: ";
-    printArray(dynArray, n);
-
-    delete[] dynArray; // xotirani tozalash
-
-    // 3. 2 o‘lchovli massiv (matritsa)
-    int rows = 2, cols = 3;
-    int matrix[2][3] = {
-        {1, 2, 3},
-        {4, 5, 6}
-    };
-
-    cout << "\n2D massiv (matritsa):" << endl;
-    for(int i = 0; i < rows; i++) {
-        for(int j = 0; j < cols; j++) {
-            cout << matrix[i][j] << " ";
+    // Elementlarni kiriting
+    void input() {
+        cout << "Massivning " << size << " ta elementini kiriting:\n";
+        for(int i = 0; i < size; i++) {
+            cout << "Element " << i + 1 << ": ";
+            cin >> arr[i];
         }
+    }
+
+    // Massivni chiqarish
+    void print() const {
+        cout << "Massiv elementlari: ";
+        for(int i = 0; i < size; i++)
+            cout << arr[i] << " ";
         cout << endl;
     }
 
+    // Eng katta elementni topish
+    int findMax() const {
+        int maxVal = arr[0];
+        for(int i = 1; i < size; i++) {
+            if(arr[i] > maxVal)
+                maxVal = arr[i];
+        }
+        return maxVal;
+    }
+
+    // Eng kichik elementni topish
+    int findMin() const {
+        int minVal = arr[0];
+        for(int i = 1; i < size; i++) {
+            if(arr[i] < minVal)
+                minVal = arr[i];
+        }
+        return minVal;
+    }
+
+    // Massivni saralash (o'sish tartibida)
+    void sortArray() {
+        sort(arr, arr + size);
+    }
+
+    // Massivdan element qidirish (linear search)
+    int search(int key) const {
+        for(int i = 0; i < size; i++) {
+            if(arr[i] == key)
+                return i; // indeks qaytariladi
+        }
+        return -1; // topilmadi
+    }
+
+    // Faylga yozish
+    void saveToFile(const string& filename) const {
+        ofstream fout(filename);
+        if (!fout)
+            throw runtime_error("Fayl ochib bo'lmadi");
+        fout << size << "\n";
+        for(int i = 0; i < size; i++) {
+            fout << arr[i] << " ";
+        }
+        fout.close();
+    }
+
+    // Fayldan o'qish
+    void loadFromFile(const string& filename) {
+        ifstream fin(filename);
+        if (!fin)
+            throw runtime_error("Fayl ochib bo'lmadi");
+        int newSize;
+        fin >> newSize;
+        if(newSize <= 0)
+            throw runtime_error("Fayldagi massiv o'lchami noto'g'ri");
+
+        delete[] arr; // eski massivni o'chirish
+        size = newSize;
+        arr = new int[size];
+        for(int i = 0; i < size; i++) {
+            fin >> arr[i];
+        }
+        fin.close();
+    }
+};
+
+int main() {
+    try {
+        int n;
+        cout << "Massiv o'lchamini kiriting: ";
+        cin >> n;
+
+        ArrayManager am(n);
+
+        am.input();
+        am.print();
+
+        cout << "Eng katta element: " << am.findMax() << endl;
+        cout << "Eng kichik element: " << am.findMin() << endl;
+
+        am.sortArray();
+        cout << "Saralangan massiv: ";
+        am.print();
+
+        int key;
+        cout << "Qidiriladigan elementni kiriting: ";
+        cin >> key;
+        int index = am.search(key);
+        if(index != -1)
+            cout << key << " elementi " << index << "-indeksta topildi.\n";
+        else
+            cout << key << " elementi topilmadi.\n";
+
+        // Faylga yozish va o'qish
+        string filename = "massiv_data.txt";
+        am.saveToFile(filename);
+        cout << "Massiv faylga yozildi: " << filename << endl;
+
+        // Yangi massiv yaratib fayldan o'qish
+        ArrayManager am2(1); // dastlab kichik massiv
+        am2.loadFromFile(filename);
+        cout << "Fayldan o'qilgan massiv: ";
+        am2.print();
+
+    } catch(const exception& e) {
+        cerr << "Xatolik: " << e.what() << endl;
+    }
     return 0;
 }
