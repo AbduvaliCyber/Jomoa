@@ -1,151 +1,136 @@
 #include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <stdexcept>
+#include <vector>
+#include <string>
 using namespace std;
 
-// ArrayManager klassi: massivlar bilan ishlash uchun
-class ArrayManager {
-private:
-    int* arr;
-    int size;
+class Light {
+protected:
+    string name;
+    bool isOn;
+    float intensity; // 0.0 dan 1.0 gacha
 
 public:
-    // Konstruktor (dinamik massiv yaratadi)
-    ArrayManager(int n) : size(n) {
-        if (size <= 0)
-            throw invalid_argument("Massiv o'lchami musbat bo'lishi kerak");
-        arr = new int[size];
+    Light(string n, float inten = 1.0f) : name(n), isOn(false), intensity(inten) {
+        if (intensity < 0.0f) intensity = 0.0f;
+        if (intensity > 1.0f) intensity = 1.0f;
     }
 
-    // Destruktor
-    ~ArrayManager() {
-        delete[] arr;
+    virtual ~Light() {}
+
+    virtual void turnOn() {
+        isOn = true;
     }
 
-    // Elementlarni kiriting
-    void input() {
-        cout << "Massivning " << size << " ta elementini kiriting:\n";
-        for(int i = 0; i < size; i++) {
-            cout << "Element " << i + 1 << ": ";
-            cin >> arr[i];
+    virtual void turnOff() {
+        isOn = false;
+    }
+
+    virtual void setIntensity(float inten) {
+        if (inten < 0.0f || inten > 1.0f) {
+            cout << "Noto'g'ri intensivlik! 0.0 - 1.0 oralig'ida bo'lishi kerak.\n";
+            return;
         }
+        intensity = inten;
     }
 
-    // Massivni chiqarish
-    void print() const {
-        cout << "Massiv elementlari: ";
-        for(int i = 0; i < size; i++)
-            cout << arr[i] << " ";
-        cout << endl;
+    virtual void printStatus() const {
+        cout << "Light '" << name << "' is " << (isOn ? "ON" : "OFF")
+             << ", Intensity: " << intensity << endl;
+    }
+};
+
+class PointLight : public Light {
+private:
+    float x, y, z; // joylashuv
+
+public:
+    PointLight(string n, float xx, float yy, float zz, float inten = 1.0f)
+        : Light(n, inten), x(xx), y(yy), z(zz) {}
+
+    void setPosition(float xx, float yy, float zz) {
+        x = xx; y = yy; z = zz;
     }
 
-    // Eng katta elementni topish
-    int findMax() const {
-        int maxVal = arr[0];
-        for(int i = 1; i < size; i++) {
-            if(arr[i] > maxVal)
-                maxVal = arr[i];
-        }
-        return maxVal;
+    void printStatus() const override {
+        cout << "PointLight '" << name << "' at (" << x << ", " << y << ", " << z << ") "
+             << (isOn ? "ON" : "OFF") << ", Intensity: " << intensity << endl;
+    }
+};
+
+class DirectionalLight : public Light {
+private:
+    float dirX, dirY, dirZ; // yo'nalish
+
+public:
+    DirectionalLight(string n, float dx, float dy, float dz, float inten = 1.0f)
+        : Light(n, inten), dirX(dx), dirY(dy), dirZ(dz) {}
+
+    void setDirection(float dx, float dy, float dz) {
+        dirX = dx; dirY = dy; dirZ = dz;
     }
 
-    // Eng kichik elementni topish
-    int findMin() const {
-        int minVal = arr[0];
-        for(int i = 1; i < size; i++) {
-            if(arr[i] < minVal)
-                minVal = arr[i];
-        }
-        return minVal;
+    void printStatus() const override {
+        cout << "DirectionalLight '" << name << "' direction (" << dirX << ", " << dirY << ", " << dirZ << ") "
+             << (isOn ? "ON" : "OFF") << ", Intensity: " << intensity << endl;
+    }
+};
+
+class LightManager {
+private:
+    vector<Light*> lights;
+
+public:
+    ~LightManager() {
+        for (auto l : lights)
+            delete l;
     }
 
-    // Massivni saralash (o'sish tartibida)
-    void sortArray() {
-        sort(arr, arr + size);
+    void addLight(Light* l) {
+        lights.push_back(l);
     }
 
-    // Massivdan element qidirish (linear search)
-    int search(int key) const {
-        for(int i = 0; i < size; i++) {
-            if(arr[i] == key)
-                return i; // indeks qaytariladi
-        }
-        return -1; // topilmadi
+    void turnAllOn() {
+        for (auto l : lights)
+            l->turnOn();
     }
 
-    // Faylga yozish
-    void saveToFile(const string& filename) const {
-        ofstream fout(filename);
-        if (!fout)
-            throw runtime_error("Fayl ochib bo'lmadi");
-        fout << size << "\n";
-        for(int i = 0; i < size; i++) {
-            fout << arr[i] << " ";
-        }
-        fout.close();
+    void turnAllOff() {
+        for (auto l : lights)
+            l->turnOff();
     }
 
-    // Fayldan o'qish
-    void loadFromFile(const string& filename) {
-        ifstream fin(filename);
-        if (!fin)
-            throw runtime_error("Fayl ochib bo'lmadi");
-        int newSize;
-        fin >> newSize;
-        if(newSize <= 0)
-            throw runtime_error("Fayldagi massiv o'lchami noto'g'ri");
-
-        delete[] arr; // eski massivni o'chirish
-        size = newSize;
-        arr = new int[size];
-        for(int i = 0; i < size; i++) {
-            fin >> arr[i];
-        }
-        fin.close();
+    void printAll() const {
+        cout << "------ All Lights Status ------\n";
+        for (auto l : lights)
+            l->printStatus();
+        cout << "------------------------------\n";
     }
 };
 
 int main() {
-    try {
-        int n;
-        cout << "Massiv o'lchamini kiriting: ";
-        cin >> n;
+    LightManager lm;
 
-        ArrayManager am(n);
+    PointLight* pl1 = new PointLight("Lamp1", 1.0f, 2.0f, 3.0f, 0.8f);
+    DirectionalLight* dl1 = new DirectionalLight("SunLight", 0.0f, -1.0f, 0.0f, 1.0f);
 
-        am.input();
-        am.print();
+    lm.addLight(pl1);
+    lm.addLight(dl1);
 
-        cout << "Eng katta element: " << am.findMax() << endl;
-        cout << "Eng kichik element: " << am.findMin() << endl;
+    lm.printAll();
 
-        am.sortArray();
-        cout << "Saralangan massiv: ";
-        am.print();
+    pl1->turnOn();
+    dl1->turnOn();
 
-        int key;
-        cout << "Qidiriladigan elementni kiriting: ";
-        cin >> key;
-        int index = am.search(key);
-        if(index != -1)
-            cout << key << " elementi " << index << "-indeksta topildi.\n";
-        else
-            cout << key << " elementi topilmadi.\n";
+    lm.printAll();
 
-        // Faylga yozish va o'qish
-        string filename = "massiv_data.txt";
-        am.saveToFile(filename);
-        cout << "Massiv faylga yozildi: " << filename << endl;
+    pl1->setPosition(5.0f, 5.0f, 5.0f);
+    dl1->setDirection(1.0f, 0.0f, 0.0f);
+    pl1->setIntensity(0.5f);
 
-        // Yangi massiv yaratib fayldan o'qish
-        ArrayManager am2(1); // dastlab kichik massiv
-        am2.loadFromFile(filename);
-        cout << "Fayldan o'qilgan massiv: ";
-        am2.print();
+    lm.printAll();
 
-    } catch(const exception& e) {
-        cerr << "Xatolik: " << e.what() << endl;
-    }
+    lm.turnAllOff();
+    lm.printAll();
+
     return 0;
 }
