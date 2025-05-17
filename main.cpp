@@ -1,153 +1,66 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <memory>
 #include <fstream>
 using namespace std;
 
-class Student {
-private:
-    string fullname;
-    int age;
-    string course;
+class Plant {
+protected:
+    string name;
+    int age;       // yosh (yil)
+    float height;  // balandlik (sm)
 
 public:
-    Student() : fullname(""), age(0), course("") {}
-    Student(string name, int a, string c) : fullname(name), age(a), course(c) {}
+    Plant(const string& n = "Unknown", int a = 0, float h = 0.0f)
+        : name(n), age(a), height(h) {}
 
-    void input() {
-        cout << "Ismi va familiyasi: ";
-        getline(cin, fullname);
-        cout << "Yoshi: ";
-        cin >> age;
-        cin.ignore();
-        cout << "Kurs (masalan: C++ Dasturlash): ";
-        getline(cin, course);
+    virtual ~Plant() {}
+
+    virtual void grow() {
+        age++;
+        height += 5.0f;  // har yili 5 sm o‘sadi
     }
 
-    void print() const {
-        cout << "Ism: " << fullname << ", Yoshi: " << age << ", Kurs: " << course << endl;
+    virtual void print() const {
+        cout << "Plant: " << name << ", Age: " << age << " years, Height: " << height << " cm\n";
     }
-
-    string getName() const { return fullname; }
 };
 
-class NajotTalim {
+class Bush : public Plant {
 private:
-    vector<Student> students;
+    int branches; // shoxlar soni
 
 public:
-    void addStudent() {
-        Student s;
-        cin.ignore();
-        cout << "Talaba qo'shish:\n";
-        s.input();
-        students.push_back(s);
-        cout << "Talaba qo'shildi.\n";
+    Bush(const string& n = "Bush", int a = 0, float h = 0.0f, int b = 0)
+        : Plant(n, a, h), branches(b) {}
+
+    void grow() override {
+        Plant::grow();
+        branches += 3;  // har yili 3ta shox ko‘payadi
     }
 
-    void showStudents() const {
-        if (students.empty()) {
-            cout << "Hozircha talaba yo'q.\n";
-            return;
-        }
-        cout << "Najot Ta'lim talabalari:\n";
-        for (size_t i = 0; i < students.size(); i++) {
-            cout << i+1 << ". ";
-            students[i].print();
-        }
-    }
-
-    void removeStudent() {
-        if (students.empty()) {
-            cout << "Talabalar ro'yxati bo'sh.\n";
-            return;
-        }
-        showStudents();
-        cout << "O'chirish uchun talaba raqamini kiriting: ";
-        int index;
-        cin >> index;
-        if (index < 1 || index > (int)students.size()) {
-            cout << "Noto'g'ri raqam.\n";
-            return;
-        }
-        students.erase(students.begin() + index - 1);
-        cout << "Talaba o'chirildi.\n";
-    }
-
-    void saveToFile(const string& filename) {
-        ofstream fout(filename);
-        if (!fout) {
-            cout << "Faylni ochib bo'lmadi.\n";
-            return;
-        }
-        fout << students.size() << "\n";
-        for (const auto& s : students) {
-            fout << s.getName() << "\n" << s.getAge() << "\n" << s.getCourse() << "\n";
-        }
-        fout.close();
-        cout << "Ma'lumotlar faylga saqlandi.\n";
-    }
-
-    void loadFromFile(const string& filename) {
-        ifstream fin(filename);
-        if (!fin) {
-            cout << "Faylni ochib bo'lmadi.\n";
-            return;
-        }
-        size_t n;
-        fin >> n;
-        fin.ignore();
-        students.clear();
-        for (size_t i = 0; i < n; i++) {
-            string name, course;
-            int age;
-            getline(fin, name);
-            fin >> age;
-            fin.ignore();
-            getline(fin, course);
-            students.emplace_back(name, age, course);
-        }
-        fin.close();
-        cout << "Ma'lumotlar fayldan yuklandi.\n";
+    void print() const override {
+        cout << "Bush: " << name << ", Age: " << age << " years, Height: " << height
+             << " cm, Branches: " << branches << "\n";
     }
 };
 
 int main() {
-    NajotTalim nt;
-    const string filename = "najot_students.txt";
-    nt.loadFromFile(filename);
+    vector<shared_ptr<Plant>> garden;
 
-    while (true) {
-        cout << "\nNajot Ta'lim boshqaruv tizimi\n";
-        cout << "1. Talaba qo'shish\n";
-        cout << "2. Talabalar ro'yxatini ko'rsatish\n";
-        cout << "3. Talaba o'chirish\n";
-        cout << "4. Ma'lumotlarni faylga saqlash\n";
-        cout << "5. Chiqish\n";
-        cout << "Tanlov: ";
-        int choice;
-        cin >> choice;
-        cin.ignore();
+    garden.push_back(make_shared<Bush>("Rose", 1, 30.0f, 10));
+    garden.push_back(make_shared<Bush>("Lilac", 2, 50.0f, 15));
 
-        switch (choice) {
-            case 1:
-                nt.addStudent();
-                break;
-            case 2:
-                nt.showStudents();
-                break;
-            case 3:
-                nt.removeStudent();
-                break;
-            case 4:
-                nt.saveToFile(filename);
-                break;
-            case 5:
-                cout << "Dasturdan chiqildi.\n";
-                return 0;
-            default:
-                cout << "Noto'g'ri tanlov.\n";
-        }
+    for (auto& plant : garden) {
+        plant->print();
+        plant->grow();
     }
+
+    cout << "After one year:\n";
+    for (auto& plant : garden) {
+        plant->print();
+    }
+
     return 0;
 }
