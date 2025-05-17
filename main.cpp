@@ -1,136 +1,153 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <fstream>
 using namespace std;
 
-class Light {
-protected:
-    string name;
-    bool isOn;
-    float intensity; // 0.0 dan 1.0 gacha
+class Student {
+private:
+    string fullname;
+    int age;
+    string course;
 
 public:
-    Light(string n, float inten = 1.0f) : name(n), isOn(false), intensity(inten) {
-        if (intensity < 0.0f) intensity = 0.0f;
-        if (intensity > 1.0f) intensity = 1.0f;
+    Student() : fullname(""), age(0), course("") {}
+    Student(string name, int a, string c) : fullname(name), age(a), course(c) {}
+
+    void input() {
+        cout << "Ismi va familiyasi: ";
+        getline(cin, fullname);
+        cout << "Yoshi: ";
+        cin >> age;
+        cin.ignore();
+        cout << "Kurs (masalan: C++ Dasturlash): ";
+        getline(cin, course);
     }
 
-    virtual ~Light() {}
-
-    virtual void turnOn() {
-        isOn = true;
+    void print() const {
+        cout << "Ism: " << fullname << ", Yoshi: " << age << ", Kurs: " << course << endl;
     }
 
-    virtual void turnOff() {
-        isOn = false;
+    string getName() const { return fullname; }
+};
+
+class NajotTalim {
+private:
+    vector<Student> students;
+
+public:
+    void addStudent() {
+        Student s;
+        cin.ignore();
+        cout << "Talaba qo'shish:\n";
+        s.input();
+        students.push_back(s);
+        cout << "Talaba qo'shildi.\n";
     }
 
-    virtual void setIntensity(float inten) {
-        if (inten < 0.0f || inten > 1.0f) {
-            cout << "Noto'g'ri intensivlik! 0.0 - 1.0 oralig'ida bo'lishi kerak.\n";
+    void showStudents() const {
+        if (students.empty()) {
+            cout << "Hozircha talaba yo'q.\n";
             return;
         }
-        intensity = inten;
+        cout << "Najot Ta'lim talabalari:\n";
+        for (size_t i = 0; i < students.size(); i++) {
+            cout << i+1 << ". ";
+            students[i].print();
+        }
     }
 
-    virtual void printStatus() const {
-        cout << "Light '" << name << "' is " << (isOn ? "ON" : "OFF")
-             << ", Intensity: " << intensity << endl;
-    }
-};
-
-class PointLight : public Light {
-private:
-    float x, y, z; // joylashuv
-
-public:
-    PointLight(string n, float xx, float yy, float zz, float inten = 1.0f)
-        : Light(n, inten), x(xx), y(yy), z(zz) {}
-
-    void setPosition(float xx, float yy, float zz) {
-        x = xx; y = yy; z = zz;
-    }
-
-    void printStatus() const override {
-        cout << "PointLight '" << name << "' at (" << x << ", " << y << ", " << z << ") "
-             << (isOn ? "ON" : "OFF") << ", Intensity: " << intensity << endl;
-    }
-};
-
-class DirectionalLight : public Light {
-private:
-    float dirX, dirY, dirZ; // yo'nalish
-
-public:
-    DirectionalLight(string n, float dx, float dy, float dz, float inten = 1.0f)
-        : Light(n, inten), dirX(dx), dirY(dy), dirZ(dz) {}
-
-    void setDirection(float dx, float dy, float dz) {
-        dirX = dx; dirY = dy; dirZ = dz;
+    void removeStudent() {
+        if (students.empty()) {
+            cout << "Talabalar ro'yxati bo'sh.\n";
+            return;
+        }
+        showStudents();
+        cout << "O'chirish uchun talaba raqamini kiriting: ";
+        int index;
+        cin >> index;
+        if (index < 1 || index > (int)students.size()) {
+            cout << "Noto'g'ri raqam.\n";
+            return;
+        }
+        students.erase(students.begin() + index - 1);
+        cout << "Talaba o'chirildi.\n";
     }
 
-    void printStatus() const override {
-        cout << "DirectionalLight '" << name << "' direction (" << dirX << ", " << dirY << ", " << dirZ << ") "
-             << (isOn ? "ON" : "OFF") << ", Intensity: " << intensity << endl;
-    }
-};
-
-class LightManager {
-private:
-    vector<Light*> lights;
-
-public:
-    ~LightManager() {
-        for (auto l : lights)
-            delete l;
+    void saveToFile(const string& filename) {
+        ofstream fout(filename);
+        if (!fout) {
+            cout << "Faylni ochib bo'lmadi.\n";
+            return;
+        }
+        fout << students.size() << "\n";
+        for (const auto& s : students) {
+            fout << s.getName() << "\n" << s.getAge() << "\n" << s.getCourse() << "\n";
+        }
+        fout.close();
+        cout << "Ma'lumotlar faylga saqlandi.\n";
     }
 
-    void addLight(Light* l) {
-        lights.push_back(l);
-    }
-
-    void turnAllOn() {
-        for (auto l : lights)
-            l->turnOn();
-    }
-
-    void turnAllOff() {
-        for (auto l : lights)
-            l->turnOff();
-    }
-
-    void printAll() const {
-        cout << "------ All Lights Status ------\n";
-        for (auto l : lights)
-            l->printStatus();
-        cout << "------------------------------\n";
+    void loadFromFile(const string& filename) {
+        ifstream fin(filename);
+        if (!fin) {
+            cout << "Faylni ochib bo'lmadi.\n";
+            return;
+        }
+        size_t n;
+        fin >> n;
+        fin.ignore();
+        students.clear();
+        for (size_t i = 0; i < n; i++) {
+            string name, course;
+            int age;
+            getline(fin, name);
+            fin >> age;
+            fin.ignore();
+            getline(fin, course);
+            students.emplace_back(name, age, course);
+        }
+        fin.close();
+        cout << "Ma'lumotlar fayldan yuklandi.\n";
     }
 };
 
 int main() {
-    LightManager lm;
+    NajotTalim nt;
+    const string filename = "najot_students.txt";
+    nt.loadFromFile(filename);
 
-    PointLight* pl1 = new PointLight("Lamp1", 1.0f, 2.0f, 3.0f, 0.8f);
-    DirectionalLight* dl1 = new DirectionalLight("SunLight", 0.0f, -1.0f, 0.0f, 1.0f);
+    while (true) {
+        cout << "\nNajot Ta'lim boshqaruv tizimi\n";
+        cout << "1. Talaba qo'shish\n";
+        cout << "2. Talabalar ro'yxatini ko'rsatish\n";
+        cout << "3. Talaba o'chirish\n";
+        cout << "4. Ma'lumotlarni faylga saqlash\n";
+        cout << "5. Chiqish\n";
+        cout << "Tanlov: ";
+        int choice;
+        cin >> choice;
+        cin.ignore();
 
-    lm.addLight(pl1);
-    lm.addLight(dl1);
-
-    lm.printAll();
-
-    pl1->turnOn();
-    dl1->turnOn();
-
-    lm.printAll();
-
-    pl1->setPosition(5.0f, 5.0f, 5.0f);
-    dl1->setDirection(1.0f, 0.0f, 0.0f);
-    pl1->setIntensity(0.5f);
-
-    lm.printAll();
-
-    lm.turnAllOff();
-    lm.printAll();
-
+        switch (choice) {
+            case 1:
+                nt.addStudent();
+                break;
+            case 2:
+                nt.showStudents();
+                break;
+            case 3:
+                nt.removeStudent();
+                break;
+            case 4:
+                nt.saveToFile(filename);
+                break;
+            case 5:
+                cout << "Dasturdan chiqildi.\n";
+                return 0;
+            default:
+                cout << "Noto'g'ri tanlov.\n";
+        }
+    }
     return 0;
 }
